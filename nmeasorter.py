@@ -4,9 +4,6 @@ import datetime
 from pathlib import Path
 from micropyGNSS import MicropyGPS
 from os import listdir
-import sys
-# change below path to your local directory
-sys.path.append("C:\Users\dapur3\git\nmeasorter")
 
 
 def nmea2nmea(nmeadir, outdir, antennaids, **kwargs):
@@ -51,12 +48,13 @@ def nmea2nmea(nmeadir, outdir, antennaids, **kwargs):
     # you could alternatively just directly give a list of nmea files
     if 'nmeafiles' in kwargs:
         nmeafiles = kwargs.get('nmeafiles')
-    
+
     if len(nmeafiles) == 0:
         print('did not find any data!')
         exit()
 
     # now go through file by file and sort nmea data
+    nmeafiles = np.sort(nmeafiles)
     counter = 0
     for nmeaf in nmeafiles:
         if np.mod(counter, 60) == 0:
