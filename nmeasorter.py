@@ -5,6 +5,7 @@ from pathlib import Path
 from micropyGNSS import MicropyGPS
 from os import listdir
 
+# ALL CODE WRITTEN BY DAVID PURNELL
 
 def nmea2nmea(nmeadir, outdir, antennaids, **kwargs):
     # nmeadir contains nmea files to analyse

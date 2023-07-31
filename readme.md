@@ -2,5 +2,5 @@ This code is for converting NMEA data to a format that is recognised by Kristine
 
 dependencies: numpy, astropy
 
-EXAMPLE:
+see 'example.py'
 
