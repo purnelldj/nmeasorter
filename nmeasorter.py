@@ -11,14 +11,8 @@ sys.path.append("C:\Users\dapur3\git\nmeasorter")
 
 def nmea2nmea(nmeadir, outdir, antennaids, **kwargs):
     # nmeadir contains nmea files to analyse
-    # outdir is the parent directory to put snr files into
-    
-    # make dirs for snr data if they do not exist already
-    if 'snrdir_ants' in kwargs:
-        snrdir_ants = kwargs.get('snrdir_ants')
-    else:
-        snrdir_ants = [outdir + '/snr/' + aid + '/' for aid in antennaids]
-    [checkdir(snrd) for snrd in snrdir_ants]
+    # outdir is the output directory
+    # antenna ids are e.g., 'ACM0', 'ACM1'...
 
     # check if there are directories for each day
     dirlist = listdir(nmeadir)
@@ -62,7 +56,7 @@ def nmea2nmea(nmeadir, outdir, antennaids, **kwargs):
         print('did not find any data!')
         exit()
 
-    # now go through file by file and extract the snr dara
+    # now go through file by file and sort nmea data
     counter = 0
     for nmeaf in nmeafiles:
         if np.mod(counter, 60) == 0:
@@ -72,19 +66,12 @@ def nmea2nmea(nmeadir, outdir, antennaids, **kwargs):
         nmeasort(nmeaf, antennaids, outdir, **kwargs)
 
 
-def nmeasort(tnmea, antennaids, outdir, multiant=True, outfiledt=1*60*60, decimate=1, **kwargs):
+def nmeasort(tnmea, antennaids, outdir, multiant=True, outfiledt=24*60*60, decimate=1, **kwargs):
     # make new nmea data in gnssrefl format
-    # default values for decimate, snrformat, snrdirs and snrprefix
 
-    snrdir_ants = [outdir + '/snr/' + aid for aid in antennaids]
-    if 'snrdir_ants' in kwargs:
-        snrdir_ants = kwargs.get('snrdir_ants')
-    snrprefix_ants = ['' for aid in antennaids]
-    if 'snrprefix_ants' in kwargs:
-        snrprefix_ants = kwargs.get('snrprefix_ants')
-    if len(snrprefix_ants) != len(snrdir_ants):
-        print('snrprefix_ants and snrdir_ants must be the same length - stopping')
-        exit()
+    klprefix_ants = ['' for aid in antennaids]
+    if 'klprefix_ants' in kwargs:
+        klprefix_ants = kwargs.get('klprefix_ants')
 
     aidsize = len(antennaids[0])
     for aid in antennaids:
@@ -134,25 +121,25 @@ def nmeasort(tnmea, antennaids, outdir, multiant=True, outfiledt=1*60*60, decima
                 continue
             if gotdate:
                 if dtt >= efdt:
-                    [fs.close() for fs in f_snr]
+                    [fs.close() for fs in f_nmea]
                     gotdate = False
             if not gotdate:
                 tfdt = datetime.datetime(gdatet[2] + 2000, gdatet[1], gdatet[0], 0, 0, 0)
                 efdt = tfdt + datetime.timedelta(seconds=outfiledt)
                 # /nmea/ABCD/2021/ABCD0030.21.A
-                nmeadirs = [outdir + '/nmea/' + snrpf + '/' + tfdt.strftime('%Y') for snrpf in snrprefix_ants]
+                nmeadirs = [outdir + '/nmea/' + klpf + '/' + tfdt.strftime('%Y') for klpf in klprefix_ants]
                 [checkdir(nmead) for nmead in nmeadirs]
-                nmeafs = [nmead + '/' + snrpf + tfdt.strftime('%j0.%y.A') for nmead, snrpf in zip(nmeadirs, snrprefix_ants)]
-                f_snr = [open(nmeaf, 'a+') for nmeaf in nmeafs]
+                nmeafs = [nmead + '/' + klpf + tfdt.strftime('%j0.%y.A') for nmead, klpf in zip(nmeadirs, klprefix_ants)]
+                f_nmea = [open(nmeaf, 'a+') for nmeaf in nmeafs]
                 gotdate = True
         
         if not gotdate or np.mod(int(gtimet[2]), decimate) != 0:
             continue
 
-        f_snr[ii].write(nmealine)
+        f_nmea[ii].write(nmealine)
 
     if gotdate:
-        [fs.close() for fs in f_snr]
+        [fs.close() for fs in f_nmea]
 
 
 def checkdir(dirstr):
