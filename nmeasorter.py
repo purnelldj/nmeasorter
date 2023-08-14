@@ -150,3 +150,57 @@ def datetime2gps(dt):
     timeobj = Time(dt, format='datetime')
     gpstime = timeobj.gps
     return gpstime
+
+
+def nmea2fix(nmeastr, multiant=True, GGA=True, printmeans=True, **kwargs):
+    if multiant:
+        lla = np.empty((0, 4), dtype=object)
+    else:
+        lla = np.empty((0, 3))
+    with open(nmeastr, 'r') as f:
+        for line in f:
+            if multiant:
+                curant = line[0:4]
+                line = line[5:]
+            nmealine = line
+            dollarerror = nmealine.count('$')
+            if dollarerror > 1:
+                continue
+            nmeat = MicropyGPS()
+            [nmeat.update(tt) for tt in nmealine]
+            if GGA:
+                if nmealine[1:6] == 'GNGGA':
+                    lat_data = nmeat.latitude
+                    latt = lat_data[0] + lat_data[1] / 60
+                    if lat_data[2] == 'S':
+                        latt = -latt
+                    lon_data = nmeat.longitude
+                    lont = lon_data[0] + lon_data[1] / 60
+                    if lon_data[2] == 'W':
+                        lont = -lont
+                    if multiant:
+                        lla = np.vstack((lla, [latt, lont, nmeat.altitude + nmeat.geoid_height, curant]))
+                    else:
+                        lla = np.vstack((lla, [latt, lont, nmeat.altitude + nmeat.geoid_height]))
+            else:
+                if nmealine[1:6] == 'GNRMC':
+                    lat_data = nmeat.latitude
+                    latt = lat_data[0] + lat_data[1] / 60
+                    if lat_data[2] == 'S':
+                        latt = -latt
+                    lon_data = nmeat.longitude
+                    lont = lon_data[0] + lon_data[1] / 60
+                    if lon_data[2] == 'W':
+                        lont = -lont
+                    if multiant:
+                        lla = np.vstack((lla, [latt, lont, np.nan, curant]))
+                    else:
+                        lla = np.vstack((lla, [latt, lont, np.nan]))
+    lat = np.nanmean(np.array(lla[:, 0], dtype=float))
+    lon = np.nanmean(np.array(lla[:, 1], dtype=float))
+    hgt = np.nanmean(np.array(lla[:, 2], dtype=float))
+    if printmeans:
+        print('mean lat is ' + str(lat))
+        print('mean lon is ' + str(lon))
+        print('mean hgt is ' + str(hgt))
+    return lat, lon, hgt

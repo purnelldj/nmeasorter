@@ -1,5 +1,5 @@
 import datetime
-from nmeasorter import nmea2nmea
+from nmeasorter import nmea2fix, nmea2nmea
 import sys
 # change below path to your local directory
 sys.path.append('/Users/dave/git/nmeasorter')
@@ -10,6 +10,16 @@ sys.path.append('/Users/dave/git/nmeasorter')
 nmeadir = '/Users/dave/git/nmeasorter/local_processing/sjdlr/nmea'  # input data
 # note: i put local_processing/ in the .gitignore file
 # i suggest you make your own directory called local_processing
+
+# first get an estimate of lat, lon, altitude from station (you will need this later for gnssrefl)
+# pick any nmea file from data
+lat, lon, hgt = nmea2fix(nmeadir + '/151121_0000.nmea')
+# the output will print in the terminal:
+# mean lat is 47.448818715277774
+# mean lon is -70.36556071874999
+# mean hgt is -17.704166666666666
+# you can use these as inputs for example for https://gnss-reflections.org/rzones
+# note that the precise location is not really important
 
 outdir = '/Users/dave/git/nmeasorter/local_processing/sjdlr/gnssrefl_input'  # output directory
 # sdt and edt are not required inputs
