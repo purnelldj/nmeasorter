@@ -43,6 +43,15 @@ def nmea2nmea(nmeadir, outdir, antennaids, **kwargs):
                 continue
         # you could add a different format here if you want, you just need to give the extension
         tnmea = listdir(tdir)
+        try:
+            nmeadt = [datetime.datetime.strptime(nmdt, "%d%m%y_%H%M.nmea") for nmdt in tnmea]
+            nmeadt = np.array(nmeadt)
+            tfilter = np.logical_and(nmeadt >= sdt, nmeadt < edt)
+            #print(np.sum(tfilter), nmeadt.shape)
+            tnmea = np.array(tnmea)
+            tnmea = tnmea[tfilter]
+        except:
+            pass
         tnmea = [tdir +'/' + tn for tn in tnmea if tn[-5:] == '.nmea']
         nmeafiles = np.append(nmeafiles, tnmea)
     
@@ -157,6 +166,9 @@ def nmea2fix(nmeastr, multiant=True, GGA=True, printmeans=True, **kwargs):
         lla = np.empty((0, 4), dtype=object)
     else:
         lla = np.empty((0, 3))
+    ggarmc = 'RMC'
+    if GGA:
+        ggarmc = 'GGA'
     with open(nmeastr, 'r') as f:
         for line in f:
             if multiant:
@@ -168,34 +180,19 @@ def nmea2fix(nmeastr, multiant=True, GGA=True, printmeans=True, **kwargs):
                 continue
             nmeat = MicropyGPS()
             [nmeat.update(tt) for tt in nmealine]
-            if GGA:
-                if nmealine[1:6] == 'GNGGA':
-                    lat_data = nmeat.latitude
-                    latt = lat_data[0] + lat_data[1] / 60
-                    if lat_data[2] == 'S':
-                        latt = -latt
-                    lon_data = nmeat.longitude
-                    lont = lon_data[0] + lon_data[1] / 60
-                    if lon_data[2] == 'W':
-                        lont = -lont
-                    if multiant:
-                        lla = np.vstack((lla, [latt, lont, nmeat.altitude + nmeat.geoid_height, curant]))
-                    else:
-                        lla = np.vstack((lla, [latt, lont, nmeat.altitude + nmeat.geoid_height]))
-            else:
-                if nmealine[1:6] == 'GNRMC':
-                    lat_data = nmeat.latitude
-                    latt = lat_data[0] + lat_data[1] / 60
-                    if lat_data[2] == 'S':
-                        latt = -latt
-                    lon_data = nmeat.longitude
-                    lont = lon_data[0] + lon_data[1] / 60
-                    if lon_data[2] == 'W':
-                        lont = -lont
-                    if multiant:
-                        lla = np.vstack((lla, [latt, lont, np.nan, curant]))
-                    else:
-                        lla = np.vstack((lla, [latt, lont, np.nan]))
+            if nmealine[1:6] == 'GN' + ggarmc:
+                lat_data = nmeat.latitude
+                latt = lat_data[0] + lat_data[1] / 60
+                if lat_data[2] == 'S':
+                    latt = -latt
+                lon_data = nmeat.longitude
+                lont = lon_data[0] + lon_data[1] / 60
+                if lon_data[2] == 'W':
+                    lont = -lont
+                if multiant:
+                    lla = np.vstack((lla, [latt, lont, nmeat.altitude + nmeat.geoid_height, curant]))
+                else:
+                    lla = np.vstack((lla, [latt, lont, nmeat.altitude + nmeat.geoid_height]))
     lat = np.nanmean(np.array(lla[:, 0], dtype=float))
     lon = np.nanmean(np.array(lla[:, 1], dtype=float))
     hgt = np.nanmean(np.array(lla[:, 2], dtype=float))
